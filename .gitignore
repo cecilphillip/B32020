@@ -348,3 +348,13 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Silly MacOS thing
+**/.DS_Store
+
+# Rider configuration folder 
+.idea/
+
+# project artifacts
+data.zip
+b32020

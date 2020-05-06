@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <UserSecretsId>dotnet-B320-A103D0B0-6414-4A62-9CBA-FC4898059E99</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="ColoredConsole" Version="1.0.0" />
+        <PackageReference Include="Figgle" Version="0.3.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.2" />
+        <PackageReference Include="System.Buffers" Version="4.5.1" />
+        <PackageReference Include="System.Interactive" Version="4.1.1" />
+        <PackageReference Include="System.IO.Pipelines" Version="4.7.1" />
+        <PackageReference Include="System.Text.Json" Version="4.7.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="data.b3.zip" />
+    </ItemGroup>
+</Project>

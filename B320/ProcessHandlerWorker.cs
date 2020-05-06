@@ -1,0 +1,98 @@
+using System;
+using System.Globalization;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using ColoredConsole;
+
+namespace B320
+{
+    public class ProcessHandlerWorker : BackgroundService
+    {
+        private readonly PayloadProcessingChannel _payloadChannel;
+        private readonly DigitalSigner _signer;
+        private readonly ITextTransformer _transformer;
+        private readonly IHostApplicationLifetime _applicationLifetime;
+        private readonly ILogger<ProcessHandlerWorker> _logger;
+        private readonly Random _random = new Random(DateTime.UtcNow.Millisecond);
+
+        public ProcessHandlerWorker(PayloadProcessingChannel payloadChannel, DigitalSigner signer,
+            ITextTransformer transformer,
+            IHostApplicationLifetime applicationLifetime, ILogger<ProcessHandlerWorker> logger)
+        {
+            _payloadChannel = payloadChannel;
+            _signer = signer;
+            _transformer = transformer;
+            _applicationLifetime = applicationLifetime;
+            _logger = logger;
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                JsonDocument payload = await _payloadChannel.ReadAsync(cancellationToken);
+                if (!payload.RootElement.TryGetProperty("message", out JsonElement messageElement))
+                {
+                    // log something here
+                    return;
+                }
+
+                if (!payload.RootElement.TryGetProperty("signature", out JsonElement signatureElement))
+                {
+                    // log something here
+                    return;
+                }
+
+                string message = messageElement.GetString();
+                
+                byte[] preTransformBytes = Convert.FromBase64String(message);
+                string preTransformMessage = Encoding.UTF8.GetString(preTransformBytes);
+                
+                message = _transformer.Decode(preTransformMessage);
+                message = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(message);
+
+                byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+                using SHA512Managed hasher = new SHA512Managed();
+                byte[] hashedMessage = hasher.ComputeHash(messageBytes);
+
+                string signature = signatureElement.GetString();
+                byte[] signedHash = Convert.FromBase64String(signature);
+                if (!_signer.Verify(hashedMessage, signedHash))
+                {
+                    // log error
+                    return;
+                }
+
+                string outputText = string.Empty;
+                ConsoleColor[] colorOptions =
+                    {ConsoleColor.Yellow, ConsoleColor.Green, ConsoleColor.Blue, ConsoleColor.White};
+
+                message.Split("\n")
+                    .ForEach(str =>
+                    {
+                        outputText = Figgle.FiggleFonts.Standard.Render(str);
+                        int choice = _random.Next(colorOptions.Length - 1);
+                        ColorConsole.WriteLine(outputText.Color(colorOptions[choice]));
+                    });
+            }
+            catch (OperationCanceledException)
+            {
+                // log some stuff
+            }
+            catch (Exception)
+            {
+                // log some more stuff
+            }
+            finally
+            {
+                _applicationLifetime.StopApplication();
+            }
+        }
+    }
+}
