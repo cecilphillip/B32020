@@ -4,25 +4,24 @@ namespace B320
 {
     public sealed class DigitalSigner
     {
-        private readonly string _hashAlgorithm = "SHA512";
+        private readonly string _hashAlgorithm;
         private readonly int _keySize = 2048;
         private RSAParameters _publicKey;
         private RSAParameters _privateKey;
 
-        public DigitalSigner(string hashAlgorithm)
+        public DigitalSigner(string hashAlgorithm = Constants.HASH_SIGNATURE_ALGORITHM)
         {
             _hashAlgorithm = hashAlgorithm;
-            
             GenerateKeys();
         }
 
-        public void GenerateKeys()
+        private void GenerateKeys()
         {
             using RSACryptoServiceProvider cryptoServiceProvider = new RSACryptoServiceProvider(_keySize)
             {
                 PersistKeyInCsp = false
             };
-            
+
             _publicKey = cryptoServiceProvider.ExportParameters(false);
             _privateKey = cryptoServiceProvider.ExportParameters(true);
         }
@@ -38,7 +37,7 @@ namespace B320
 
             string mapNameToOid = CryptoConfig.MapNameToOID(_hashAlgorithm);
             byte[] signed = cryptoServiceProvider.SignHash(hashed, mapNameToOid);
-           return signed;
+            return signed;
         }
 
         public bool Verify(byte[] hashed, byte[] signature)
@@ -48,7 +47,6 @@ namespace B320
 
             bool verified = rsa.VerifyHash(hashed, CryptoConfig.MapNameToOID(_hashAlgorithm), signature);
             return verified;
-
         }
     }
 }
