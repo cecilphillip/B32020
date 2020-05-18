@@ -28,15 +28,18 @@ namespace B320
 
         public async Task<bool> AddPayloadAsync(JsonDocument document, CancellationToken cancellationToken = default)
         {
-            while (await _channel.Writer.WaitToWriteAsync(cancellationToken) &&
-                   !cancellationToken.IsCancellationRequested)
+            while (await _channel.Writer.WaitToWriteAsync(cancellationToken))
             {
+                _logger.LogInformation("Writing to channel");
                 if (_channel.Writer.TryWrite(document))
                 {
-                    // log stuff 
+                    _logger.LogInformation("Channel write successful");
                     return true;
                 }
             }
+
+            if (cancellationToken.IsCancellationRequested) _logger.LogWarning("Operation cancelled {operation}",nameof(AddPayloadAsync));
+            _logger.LogWarning("Unable to write to channel");
 
             return false;
         }
@@ -45,10 +48,14 @@ namespace B320
         {
             while (await _channel.Reader.WaitToReadAsync(cancellationToken))
             {
+                _logger.LogInformation("Reading channel data");
                 JsonDocument document = await _channel.Reader.ReadAsync(cancellationToken);
+                _logger.LogInformation("Channel read successful");
                 return document;
             }
-
+            
+            if (cancellationToken.IsCancellationRequested) _logger.LogWarning("Operation cancelled {operation}",nameof(ReadAsync));
+            _logger.LogWarning("Unable to read channel");
             return null;
         }
     }

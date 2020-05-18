@@ -18,25 +18,33 @@ namespace B320
     {
         private readonly PayloadProcessingChannel _payloadChannel;
         private readonly IHostApplicationLifetime _applicationLifetime;
+        private readonly ManualResetEventSlim _payloadReadyEvent;
         private readonly ILogger<DataAcquisitionWorker> _logger;
         private const int MINIMUM_BUFFER_SIZE = 2048;
 
         public DataAcquisitionWorker(PayloadProcessingChannel payloadChannel,
-            IHostApplicationLifetime applicationLifetime, ILogger<DataAcquisitionWorker> logger)
+            IHostApplicationLifetime applicationLifetime, ManualResetEventSlim payloadReadyEvent, 
+            ILogger<DataAcquisitionWorker> logger)
         {
             _payloadChannel = payloadChannel;
             _applicationLifetime = applicationLifetime;
+            _payloadReadyEvent = payloadReadyEvent;
             _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Worker started");
+            _payloadReadyEvent.Wait(cancellationToken);
+            _payloadReadyEvent.Reset();
+            
             while (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.UtcNow);
                 if (!File.Exists(Constants.EXPECTED_ZIP_FILE_NAME))
                 {
                     // The package hasn't arrived yet
+                    _logger.LogDebug("Compressed payload not found {filename}",Constants.EXPECTED_ZIP_FILE_NAME);
                     await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
                     continue;
                 }
@@ -51,41 +59,45 @@ namespace B320
 
                 while (true)
                 {
+                    _logger.LogDebug("Reading stream into pipe buffer");
                     ReadResult result = await pipeReader.ReadAsync(cancellationToken);
                     ReadOnlySequence<byte> buffer = result.Buffer;
 
                     // Notify the PipeReader how much buffer was used
                     pipeReader.AdvanceTo(buffer.Start, buffer.End);
 
-                    if (result.IsCompleted)
-                    {
-                        JsonDocument documentFromBuffer = InspectBuffer(buffer);
-                        _ = await _payloadChannel.AddPayloadAsync(documentFromBuffer, cancellationToken);
-                        break;
-                    }
+                    if (!result.IsCompleted) continue;
+                    
+                    _logger.LogDebug("Payload read");
+                    JsonDocument documentFromBuffer = InspectBuffer(buffer);
+                    _ = await _payloadChannel.AddPayloadAsync(documentFromBuffer, cancellationToken);
+                    break;
                 }
 
                 await pipeReader.CompleteAsync();
                 await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
                 return;
             }
+
+            if (cancellationToken.IsCancellationRequested) _logger.LogWarning("Operation cancelled");
         }
 
-        private static JsonDocument InspectBuffer(ReadOnlySequence<byte> buffer)
+        private  JsonDocument InspectBuffer(ReadOnlySequence<byte> buffer)
         {
             JsonDocument result = null;
             foreach (ReadOnlyMemory<byte> segment in buffer)
             {
-                Console.WriteLine($"Buffer Length {buffer.Length}");
-                Console.WriteLine($"Segment Length {segment.Length}");
+                _logger.LogDebug($"Buffer Length {buffer.Length}");
+                _logger.LogDebug($"Segment Length {segment.Length}");
 
-                Console.WriteLine(Encoding.UTF8.GetString(segment.Span));
+                _logger.LogTrace(Encoding.UTF8.GetString(segment.Span));
                 if (!buffer.IsSingleSegment)
                 {
-                    // log error
+                    _logger.LogError("ReadOnlySequence larger than expected");
                     break;
                 }
 
+                _logger.LogDebug("");
                 result = JsonDocument.Parse(buffer, new JsonDocumentOptions
                 {
                     CommentHandling = JsonCommentHandling.Disallow,

@@ -1,4 +1,7 @@
+using System.Diagnostics.Eventing.Reader;
+using System.Threading;
 using System.Threading.Tasks;
+using B320.Transformers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -16,8 +19,9 @@ namespace B320
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddTransient<ITextTransformer, L33tTransformer>();
+                    services.AddTransient<ITextTransformer, L33TTransformer>();
                     services.AddSingleton<DigitalSigner>(provider => new DigitalSigner("SHA512"));
+                    services.AddSingleton<ManualResetEventSlim>();
                     services.AddSingleton<PayloadProcessingChannel>();
                     services.AddHostedService<PayloadGeneratorWorker>();
                     services.AddHostedService<DataAcquisitionWorker>();

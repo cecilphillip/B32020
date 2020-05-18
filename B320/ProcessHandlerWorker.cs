@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using B320.Transformers;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ColoredConsole;
@@ -22,8 +23,8 @@ namespace B320
         private readonly Random _random = new Random(DateTime.UtcNow.Millisecond);
 
         public ProcessHandlerWorker(PayloadProcessingChannel payloadChannel, DigitalSigner signer,
-            ITextTransformer transformer,
-            IHostApplicationLifetime applicationLifetime, ILogger<ProcessHandlerWorker> logger)
+            ITextTransformer transformer, IHostApplicationLifetime applicationLifetime,
+            ILogger<ProcessHandlerWorker> logger)
         {
             _payloadChannel = payloadChannel;
             _signer = signer;
@@ -34,18 +35,25 @@ namespace B320
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Worker started");
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Operation cancelled");
+                return;
+            }
+            
             try
             {
                 JsonDocument payload = await _payloadChannel.ReadAsync(cancellationToken);
                 if (!payload.RootElement.TryGetProperty("message", out JsonElement messageElement))
                 {
-                    // log something here
+                    _logger.LogError("Payload property missing {property}", "message");
                     return;
                 }
 
                 if (!payload.RootElement.TryGetProperty("signature", out JsonElement signatureElement))
                 {
-                    // log something here
+                    _logger.LogError("Payload property missing {property}", "signature");
                     return;
                 }
 
@@ -53,7 +61,8 @@ namespace B320
                 
                 byte[] preTransformBytes = Convert.FromBase64String(message);
                 string preTransformMessage = Encoding.UTF8.GetString(preTransformBytes);
-                
+
+                _logger.LogDebug("Decoding message");
                 message = _transformer.Decode(preTransformMessage);
                 message = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(message);
 
@@ -63,9 +72,11 @@ namespace B320
 
                 string signature = signatureElement.GetString();
                 byte[] signedHash = Convert.FromBase64String(signature);
+                
+                _logger.LogInformation("Verifying message signature");
                 if (!_signer.Verify(hashedMessage, signedHash))
                 {
-                    // log error
+                    _logger.LogError("Failed to verify message signature");
                     return;
                 }
 
@@ -73,6 +84,7 @@ namespace B320
                 ConsoleColor[] colorOptions =
                     {ConsoleColor.Yellow, ConsoleColor.Green, ConsoleColor.Blue, ConsoleColor.White};
 
+                _logger.LogTrace("Format and display the message payload");
                 message.Split("\n")
                     .ForEach(str =>
                     {
@@ -81,16 +93,17 @@ namespace B320
                         ColorConsole.WriteLine(outputText.Color(colorOptions[choice]));
                     });
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
-                // log some stuff
+                _logger.LogError(ex, "Operation cancelled");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // log some more stuff
+                _logger.LogError(ex, "oh oh.....");
             }
             finally
             {
+                _logger.LogTrace("Stopping application");
                 _applicationLifetime.StopApplication();
             }
         }
