@@ -17,7 +17,7 @@ namespace B320
         {
             var options = new BoundedChannelOptions(MAXIMUM_CHANNEL_MESSAGES)
             {
-                SingleWriter = false,
+                SingleWriter = true,
                 SingleReader = true
             };
 
@@ -30,7 +30,7 @@ namespace B320
         {
             while (await _channel.Writer.WaitToWriteAsync(cancellationToken))
             {
-                _logger.LogInformation("Writing to channel");
+                _logger.LogTrace("Writing to channel");
                 if (_channel.Writer.TryWrite(document))
                 {
                     _logger.LogInformation("Channel write successful");
@@ -38,7 +38,7 @@ namespace B320
                 }
             }
 
-            if (cancellationToken.IsCancellationRequested) _logger.LogWarning("Operation cancelled {operation}",nameof(AddPayloadAsync));
+            if (cancellationToken.IsCancellationRequested) _logger.LogWarning("Operation cancelled {operation}", nameof(AddPayloadAsync));
             _logger.LogWarning("Unable to write to channel");
 
             return false;
@@ -53,8 +53,8 @@ namespace B320
                 _logger.LogInformation("Channel read successful");
                 return document;
             }
-            
-            if (cancellationToken.IsCancellationRequested) _logger.LogWarning("Operation cancelled {operation}",nameof(ReadAsync));
+
+            if (cancellationToken.IsCancellationRequested) _logger.LogWarning("Operation cancelled {operation}", nameof(ReadAsync));
             _logger.LogWarning("Unable to read channel");
             return null;
         }
