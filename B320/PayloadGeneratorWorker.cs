@@ -104,7 +104,7 @@ namespace B320
         {
             string data =
                 CultureInfo.InvariantCulture.TextInfo.ToTitleCase(
-                    "Hello (and goodbye)\nMicrosoft Build\nThank You All");
+                    "No, Thank You!!!");
             
             _logger.LogInformation("Payload acquired");
             return new ValueTask<string>(data);
