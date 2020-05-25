@@ -5,7 +5,7 @@ namespace B320
     public sealed class DigitalSigner
     {
         private readonly string _hashAlgorithm;
-        private readonly int _keySize = 2048;
+        private const int _keySize = 2048;
         private RSAParameters _publicKey;
         private RSAParameters _privateKey;
 

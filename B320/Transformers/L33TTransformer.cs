@@ -17,8 +17,7 @@ namespace B320.Transformers
                 _ => ch.ToString()
             };
 
-            string mappedTransform = string.Join("", data.Select(map));
-            return mappedTransform;
+            return string.Join("", data.Select(map));
         }
 
         public string Decode(string data)
@@ -31,8 +30,7 @@ namespace B320.Transformers
                 _ => ch.ToString()
             };
 
-            string mappedTransform = string.Join("", data.Select(map));
-            return mappedTransform;
+            return string.Join("", data.Select(map));
         }
     }
 }

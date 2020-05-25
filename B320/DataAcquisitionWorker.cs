@@ -16,17 +16,15 @@ namespace B320
     public class DataAcquisitionWorker : BackgroundService
     {
         private readonly PayloadProcessingChannel _payloadChannel;
-        private readonly IHostApplicationLifetime _applicationLifetime;
         private readonly ManualResetEventSlim _payloadReadyEvent;
         private readonly ILogger<DataAcquisitionWorker> _logger;
         private const int MINIMUM_BUFFER_SIZE = 2048;
 
         public DataAcquisitionWorker(PayloadProcessingChannel payloadChannel,
-            IHostApplicationLifetime applicationLifetime, ManualResetEventSlim payloadReadyEvent, 
+            ManualResetEventSlim payloadReadyEvent, 
             ILogger<DataAcquisitionWorker> logger)
         {
             _payloadChannel = payloadChannel;
-            _applicationLifetime = applicationLifetime;
             _payloadReadyEvent = payloadReadyEvent;
             _logger = logger;
         }

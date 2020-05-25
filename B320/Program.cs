@@ -19,7 +19,7 @@ namespace B320
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddTransient<ITextTransformer, L33TTransformer>();
-                    services.AddSingleton<DigitalSigner>(provider => new DigitalSigner("SHA512"));
+                    services.AddSingleton<DigitalSigner>();
                     services.AddSingleton<ManualResetEventSlim>();
                     services.AddSingleton<PayloadProcessingChannel>();
                     services.AddHostedService<PayloadGeneratorWorker>();

@@ -22,7 +22,6 @@ namespace B320
             };
 
             _channel = Channel.CreateBounded<JsonDocument>(options);
-
             _logger = logger;
         }
 
@@ -31,11 +30,10 @@ namespace B320
             while (await _channel.Writer.WaitToWriteAsync(cancellationToken))
             {
                 _logger.LogTrace("Writing to channel");
-                if (_channel.Writer.TryWrite(document))
-                {
-                    _logger.LogInformation("Channel write successful");
-                    return true;
-                }
+                if (!_channel.Writer.TryWrite(document)) continue;
+                
+                _logger.LogInformation("Channel write successful");
+                return true;
             }
 
             if (cancellationToken.IsCancellationRequested) _logger.LogWarning("Operation cancelled {operation}", nameof(AddPayloadAsync));

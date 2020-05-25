@@ -41,7 +41,7 @@ namespace B320
                 _logger.LogWarning("Operation cancelled");
                 return;
             }
-            
+
             try
             {
                 JsonDocument payload = await _payloadChannel.ReadAsync(cancellationToken);
@@ -58,7 +58,7 @@ namespace B320
                 }
 
                 string message = messageElement.GetString();
-                
+
                 byte[] preTransformBytes = Convert.FromBase64String(message);
                 string preTransformMessage = Encoding.UTF8.GetString(preTransformBytes);
 
@@ -72,7 +72,7 @@ namespace B320
 
                 string signature = signatureElement.GetString();
                 byte[] signedHash = Convert.FromBase64String(signature);
-                
+
                 _logger.LogInformation("Verifying message signature");
                 if (!_signer.Verify(hashedMessage, signedHash))
                 {
@@ -82,14 +82,17 @@ namespace B320
 
                 string outputText = string.Empty;
                 ConsoleColor[] colorOptions =
-                    {ConsoleColor.Yellow, ConsoleColor.Green, ConsoleColor.Blue, ConsoleColor.White};
+                {
+                    ConsoleColor.Yellow, ConsoleColor.Green, ConsoleColor.Blue,
+                    ConsoleColor.Cyan, ConsoleColor.Red, ConsoleColor.White, ConsoleColor.Magenta
+                };
 
                 _logger.LogTrace("Format and display the message payload");
                 message.Split("\n")
                     .ForEach(str =>
                     {
                         outputText = Figgle.FiggleFonts.Standard.Render(str);
-                        int choice = _random.Next(colorOptions.Length - 1);
+                        int choice = _random.Next(0, colorOptions.Length - 1);
                         ColorConsole.WriteLine(outputText.Color(colorOptions[choice]));
                     });
             }

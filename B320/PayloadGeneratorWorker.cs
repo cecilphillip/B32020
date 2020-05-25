@@ -46,7 +46,8 @@ namespace B320
                     // clean up artifacts
                     File.Delete(Constants.EXPECTED_FILE_NAME);
                     File.Delete(Constants.EXPECTED_ZIP_FILE_NAME);
-                    _logger.LogDebug("Clean up completed\n\t {archivename}\n\t {filename}", Constants.EXPECTED_ZIP_FILE_NAME, Constants.EXPECTED_FILE_NAME);
+                    _logger.LogDebug("Clean up completed\n\t {archivename}\n\t {filename}",
+                        Constants.EXPECTED_ZIP_FILE_NAME, Constants.EXPECTED_FILE_NAME);
                 }
                 catch (Exception ex)
                 {
@@ -56,7 +57,7 @@ namespace B320
             }
 
             string message = await GetMessagePayload();
-            
+
             // generate hash and message signature
             byte[] messageBytes = Encoding.UTF8.GetBytes(message);
             using SHA512Managed hasher = new SHA512Managed();
@@ -88,14 +89,15 @@ namespace B320
                 byte[] dataBytes = Encoding.UTF8.GetBytes(serializedData);
                 await fileStream.WriteAsync(dataBytes, cancellationToken);
             }
+
             _logger.LogDebug("Payload file created {filename}", Constants.EXPECTED_FILE_NAME);
-            
+
             await using (FileStream zipFileStream = File.Create(Constants.EXPECTED_ZIP_FILE_NAME))
             {
                 using ZipArchive archive = new ZipArchive(zipFileStream, ZipArchiveMode.Create);
-                ZipArchiveEntry payloadEntry =
-                    archive.CreateEntryFromFile(Constants.EXPECTED_FILE_NAME, Constants.EXPECTED_FILE_NAME);
+                _ = archive.CreateEntryFromFile(Constants.EXPECTED_FILE_NAME, Constants.EXPECTED_FILE_NAME);
             }
+
             _logger.LogInformation("Compression complete {filename}", Constants.EXPECTED_ZIP_FILE_NAME);
             _payloadReadEvent.Set();
         }
@@ -105,7 +107,7 @@ namespace B320
             string data =
                 CultureInfo.InvariantCulture.TextInfo.ToTitleCase(
                     "Hello (and goodbye)\nMicrosoft Build\nThank You All");
-            
+
             _logger.LogInformation("Payload acquired");
             return new ValueTask<string>(data);
         }
