@@ -7,7 +7,7 @@ Almost every new feature of C# 8 and .NET Core 3.x was in here in just for the f
 Have fun digging through the code and seeing what it does!
 
 ## Running the code
-The only thing you'll need for this is .NET Core SDK 3.1. Maybe you might want to grab a copy of [Visual Studio Code](https://code.visualstudio.com/) or [Visual Studi0](https://visualstudio.microsoft.com/downloads/).
+The only thing you'll need for this is .NET Core SDK 3.1. Maybe you might want to grab a copy of [Visual Studio Code](https://code.visualstudio.com/?WT.mc_id=academic-0000-cephilli) or [Visual Studi0](https://visualstudio.microsoft.com/downloads/?WT.mc_id=academic-0000-cephilli).
 
 After you've cloned the repo, run the following command in your terminal.
   
